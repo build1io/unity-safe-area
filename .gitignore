@@ -1,0 +1,12 @@
+# Unity
+*.meta
+!/Resolution.cs.meta
+!/SafeArea.cs.meta
+!/SafeArea.cs.meta
+!/SafeAreaReferenceResolutionSource.cs.meta
+
+# JetBrains
+.idea/
+
+# Visual Studio cache directory
+.vs/

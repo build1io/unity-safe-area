@@ -109,8 +109,6 @@ namespace Build1.SafeArea
 
         private void ApplySafeArea()
         {
-            Debug.Log("SafeArea: apply");
-
             var safeArea = Screen.safeArea;
             var screenResolution = Screen.currentResolution;
 

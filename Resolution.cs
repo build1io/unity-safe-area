@@ -1,8 +1,8 @@
 using UnityEngine;
 
-namespace Build1.PostMVC.Extensions.Unity.ScriptableObjects
+namespace Build1.SafeArea
 {
-    [CreateAssetMenu(fileName = "Resolution", menuName = "PostMVC/Scriptable Objects/Resolution", order = 1)]
+    [CreateAssetMenu(fileName = "Resolution", menuName = "Build1/Safe Area/Resolution", order = 1)]
     public sealed class Resolution : ScriptableObject
     {
         [SerializeField] private float width;

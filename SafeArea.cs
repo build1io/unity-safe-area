@@ -1,18 +1,17 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
-using Resolution = Build1.PostMVC.Extensions.Unity.ScriptableObjects.Resolution;
 
-namespace Build1.PostMVC.Extensions.Unity.Components
+namespace Build1.SafeArea
 {
     [ExecuteInEditMode]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform))]
     public sealed class SafeArea : MonoBehaviour
     {
-        [Header("Reference Resolution"), SerializeField] public  SafeAreaReferenceResolutionSource source;
-        [SerializeField]                                 private Resolution                        resolution;
-        [SerializeField]                                 private Vector2                           widthAndHeight;
-
+        [Header("Reference Resolution"), SerializeField] public ResolutionSource source;
+        [SerializeField]                                 public Resolution       resolution;
+        [SerializeField]                                 public Vector2          resolutionWidthAndHeight;
 
         [Header("Applicable Offsets"), SerializeField] private Rect    applicableOffsetPercentage;
         [SerializeField]                               private RectInt applicableOffsetPixels;
@@ -20,31 +19,59 @@ namespace Build1.PostMVC.Extensions.Unity.Components
         [Header("Unapplicable Offsets"), SerializeField] private Rect    unapplicableOffsetPercentage;
         [SerializeField]                                 private RectInt unapplicableOffsetPixels;
 
+        public bool CanvasScalerFound      => _canvasScaler != null;
+        public bool ReferenceResolutionSet => resolution != null;
+
+        private CanvasScaler _canvasScaler;
+        private Vector2      _referenceResolution;
+
         private void Start()
         {
-            if (resolution == null)
-            {
-                Debug.LogWarning("SafeArea: Reference resolution not set. Trying to find CanvasScaler...");
-
-                var scaler = GetComponentInParent<CanvasScaler>();
-                if (scaler == null)
-                {
-                    Debug.LogError("SafeArea: CanvasScaler not found. No reference resolution to use.");
-                    return;
-                }
-
-                resolution = Resolution.FromVector2(scaler.referenceResolution);
-                Debug.LogWarning($"SafeArea: CanvasScaler found. Reference resolution: {resolution}");
-            }
-
+            if (source == ResolutionSource.CanvasScaler)
+                UpdateCanvasScaler();
+            UpdateReferenceResolution();
             ApplySafeArea();
+        }
+
+        public void UpdateCanvasScaler()
+        {
+            _canvasScaler = GetComponentInParent<CanvasScaler>();
+        }
+
+        public void UpdateReferenceResolution()
+        {
+            _referenceResolution = GetCurrentReferenceResolution();
+        }
+
+        public Vector2 GetCurrentReferenceResolution()
+        {
+            switch (source)
+            {
+                case ResolutionSource.CanvasScaler:
+                    if (!CanvasScalerFound)
+                        throw new Exception("SafeArea CanvasScaler not found.");
+                    return _canvasScaler.referenceResolution;
+
+                case ResolutionSource.Resolution:
+                    if (!ReferenceResolutionSet)
+                        throw new Exception("SafeArea Resolution not set.");
+                    return resolution.ToVector2();
+
+                case ResolutionSource.WidthAndHeight:
+                    if (resolutionWidthAndHeight == Vector2.zero)
+                        throw new Exception("SafeArea resolution values not set.");
+                    return resolutionWidthAndHeight;
+
+                default:
+                    throw new Exception($"Not implemented for source: {source}");
+            }
         }
 
         #if UNITY_EDITOR
 
-        private SafeAreaReferenceResolutionSource _referenceResolutionSource;
-        private Rect                              _lastSafeArea;
-        private Vector2                           _referenceResolution;
+        private Rect             _lastSafeArea;
+        private ResolutionSource _lastResolutionSource;
+        private Vector2          _lastResolution;
 
         private Rect    _applicableOffsetPercentage;
         private RectInt _applicableOffsetPixels;
@@ -54,12 +81,11 @@ namespace Build1.PostMVC.Extensions.Unity.Components
 
         private void Update()
         {
-            if (resolution == null)
-                return;
-
+            UpdateReferenceResolution();
+            
             if (_lastSafeArea == Screen.safeArea &&
-                _referenceResolutionSource == source &&
-                _referenceResolution.Equals(resolution.ToVector2()) &&
+                _lastResolutionSource == source &&
+                _lastResolution == _referenceResolution &&
                 _applicableOffsetPercentage == applicableOffsetPercentage &&
                 _applicableOffsetPixels.Equals(applicableOffsetPixels) &&
                 _unapplicableOffsetPercentage == unapplicableOffsetPercentage &&
@@ -69,9 +95,8 @@ namespace Build1.PostMVC.Extensions.Unity.Components
             ApplySafeArea();
 
             _lastSafeArea = Screen.safeArea;
-
-            _referenceResolutionSource = source;
-            _referenceResolution = resolution.ToVector2();
+            _lastResolutionSource = source;
+            _lastResolution = _referenceResolution;
 
             _applicableOffsetPercentage = applicableOffsetPercentage;
             _applicableOffsetPixels = applicableOffsetPixels;
@@ -79,18 +104,18 @@ namespace Build1.PostMVC.Extensions.Unity.Components
             _unapplicableOffsetPercentage = unapplicableOffsetPercentage;
             _unapplicableOffsetPixels = unapplicableOffsetPixels;
         }
-
+        
         #endif
 
         private void ApplySafeArea()
         {
-            Debug.Log("ApplySafeArea");
+            Debug.Log("SafeArea: apply");
 
             var safeArea = Screen.safeArea;
             var screenResolution = Screen.currentResolution;
 
-            var scaleHeight = resolution.Height / screenResolution.height;
-            var scaleWidth = resolution.Width / screenResolution.width;
+            var scaleHeight = _referenceResolution.y / screenResolution.height;
+            var scaleWidth = _referenceResolution.x / screenResolution.width;
 
             var topPixel = screenResolution.height - (safeArea.y + safeArea.height);
             var bottomPixels = safeArea.y;

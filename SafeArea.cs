@@ -105,6 +105,13 @@ namespace Build1.SafeArea
             _unapplicableOffsetPixels = unapplicableOffsetPixels;
         }
         
+        private void Reset()
+        {
+            var rectTransform = GetComponent<RectTransform>();
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = Vector2.one;
+        }
+        
         #endif
 
         private void ApplySafeArea()

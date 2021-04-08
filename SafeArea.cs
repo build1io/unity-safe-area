@@ -117,39 +117,41 @@ namespace Build1.SafeArea
         private void ApplySafeArea()
         {
             var safeArea = Screen.safeArea;
-            var screenResolution = Screen.currentResolution;
+            
+            var screenWidth = Screen.width;
+            var screenHeight = Screen.height;
+            
+            var scaleHeight = _referenceResolution.y / screenHeight;
+            var scaleWidth = _referenceResolution.x / screenWidth;
 
-            var scaleHeight = _referenceResolution.y / screenResolution.height;
-            var scaleWidth = _referenceResolution.x / screenResolution.width;
-
-            var topPixel = screenResolution.height - (safeArea.y + safeArea.height);
+            var topPixel = screenHeight - (safeArea.y + safeArea.height);
             var bottomPixels = safeArea.y;
             var leftPixels = safeArea.xMin;
-            var rightPixels = -(screenResolution.width - safeArea.xMax);
+            var rightPixels = -(screenWidth - safeArea.xMax);
 
             var topUnits = topPixel * scaleHeight * 1.2f;
             if (topPixel != 0)
-                topUnits += applicableOffsetPixels.y + screenResolution.height * applicableOffsetPercentage.y;
+                topUnits += applicableOffsetPixels.y + screenHeight * applicableOffsetPercentage.y;
             else
-                topUnits += unapplicableOffsetPixels.y + screenResolution.height * unapplicableOffsetPercentage.y;
+                topUnits += unapplicableOffsetPixels.y + screenHeight * unapplicableOffsetPercentage.y;
 
             var bottomUnits = bottomPixels * scaleHeight * 1.2F;
             if (bottomPixels != 0)
-                bottomUnits += applicableOffsetPixels.height + screenResolution.height * applicableOffsetPercentage.height;
+                bottomUnits += applicableOffsetPixels.height + screenHeight * applicableOffsetPercentage.height;
             else
-                bottomUnits += unapplicableOffsetPixels.height + screenResolution.height * unapplicableOffsetPercentage.height;
+                bottomUnits += unapplicableOffsetPixels.height + screenHeight * unapplicableOffsetPercentage.height;
 
             var leftUnits = leftPixels * scaleWidth;
             if (leftPixels != 0)
-                leftUnits += applicableOffsetPixels.x + screenResolution.width * applicableOffsetPercentage.x;
+                leftUnits += applicableOffsetPixels.x + screenWidth * applicableOffsetPercentage.x;
             else
-                leftUnits += unapplicableOffsetPixels.x + screenResolution.width * unapplicableOffsetPercentage.x;
+                leftUnits += unapplicableOffsetPixels.x + screenWidth * unapplicableOffsetPercentage.x;
 
             var rightUnits = rightPixels * scaleWidth;
             if (rightPixels != 0)
-                rightUnits -= applicableOffsetPixels.width + screenResolution.width * applicableOffsetPercentage.width;
+                rightUnits -= applicableOffsetPixels.width + screenWidth * applicableOffsetPercentage.width;
             else
-                rightUnits -= unapplicableOffsetPixels.width + screenResolution.width * unapplicableOffsetPercentage.width;
+                rightUnits -= unapplicableOffsetPixels.width + screenWidth * unapplicableOffsetPercentage.width;
 
             var rectTransform = GetComponent<RectTransform>();
             rectTransform.offsetMin = new Vector2(leftUnits, bottomUnits);

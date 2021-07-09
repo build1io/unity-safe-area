@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Build1.SafeArea
+namespace Build1.UnitySafeArea
 {
     [CreateAssetMenu(fileName = "Resolution", menuName = "Build1/Safe Area/Resolution", order = 1)]
     public sealed class Resolution : ScriptableObject

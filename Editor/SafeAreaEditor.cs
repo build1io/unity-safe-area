@@ -4,7 +4,7 @@ using System;
 using UnityEditor;
 using UnityEngine;
 
-namespace Build1.SafeArea.Editor
+namespace Build1.UnitySafeArea.Editor
 {
     [CustomEditor(typeof(SafeArea))]
     [CanEditMultipleObjects]

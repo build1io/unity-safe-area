@@ -1,4 +1,4 @@
-namespace Build1.SafeArea
+namespace Build1.UnitySafeArea
 {
     public enum ResolutionSource
     {

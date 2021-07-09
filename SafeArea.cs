@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Build1.SafeArea
+namespace Build1.UnitySafeArea
 {
     [ExecuteInEditMode]
     [DisallowMultipleComponent]

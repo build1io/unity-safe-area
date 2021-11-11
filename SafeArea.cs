@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,9 +10,9 @@ namespace Build1.UnitySafeArea
     [RequireComponent(typeof(RectTransform))]
     public sealed class SafeArea : MonoBehaviour
     {
-        [Header("Reference Resolution"), SerializeField] public ResolutionSource source;
-        [SerializeField]                                 public Resolution       resolution;
-        [SerializeField]                                 public Vector2          resolutionWidthAndHeight;
+        [Header("Parts"), SerializeField]                public  RectTransform    rectTransform;
+        [Header("Reference Resolution"), SerializeField] public  ResolutionSource source                = ResolutionSource.CanvasScaler;
+        [Header("Orientation"), SerializeField]          private bool             monitorSafeAreaChange = true;
 
         [Header("Top"), SerializeField] private bool  topApply;
         [SerializeField]                private float topApplicableOffsetPercentage;
@@ -37,216 +38,170 @@ namespace Build1.UnitySafeArea
         [SerializeField]                  private float rightUnapplicableOffsetPercentage;
         [SerializeField]                  private float rightUnapplicableOffsetPixels;
 
-        public bool CanvasScalerFound      => _canvasScaler != null;
-        public bool ReferenceResolutionSet => resolution != null;
+        private CanvasScaler  _canvasScaler;
+        private RectTransform _canvasScalerRectTransform;
+        private Vector2       _canvasScalerResolution;
+        private Rect          _safeArea;
 
-        private CanvasScaler _canvasScaler;
-        private Vector2      _referenceResolution;
-
-        private void Start()
+        private void Awake()
         {
-            if (source == ResolutionSource.CanvasScaler)
-                UpdateCanvasScaler();
-            UpdateReferenceResolution();
-            ApplySafeArea();
-        }
+            // Canvas scaler will be the only option for now.
+            // Other sources generate too many cases impossible to handle.
 
-        public void UpdateCanvasScaler()
-        {
+            if (rectTransform == null)
+                rectTransform = GetComponent<RectTransform>();
+
+            _safeArea = Screen.safeArea;
             _canvasScaler = GetComponentInParent<CanvasScaler>();
+            _canvasScalerRectTransform = _canvasScaler.GetComponent<RectTransform>();
+            _canvasScalerResolution = _canvasScalerRectTransform.sizeDelta;
         }
 
-        public void UpdateReferenceResolution()
+        private void OnEnable()
         {
-            _referenceResolution = GetCurrentReferenceResolution();
+            ApplySafeArea();
+
+            if (Application.isPlaying && monitorSafeAreaChange)
+                StartCoroutine(SafeAreaCheckCoroutine());
         }
 
-        public Vector2 GetCurrentReferenceResolution()
+        private void OnDisable()
         {
-            switch (source)
+            StopAllCoroutines();
+        }
+
+        private IEnumerator SafeAreaCheckCoroutine()
+        {
+            while (true)
             {
-                case ResolutionSource.CanvasScaler:
-                    if (!CanvasScalerFound)
-                        throw new Exception("SafeArea CanvasScaler not found.");
-                    return _canvasScaler.referenceResolution;
+                yield return new WaitForSeconds(0.1f);
 
-                case ResolutionSource.Resolution:
-                    if (!ReferenceResolutionSet)
-                        throw new Exception("SafeArea Resolution not set.");
-                    return resolution.ToVector2();
+                if (_safeArea == Screen.safeArea && _canvasScalerResolution == _canvasScalerRectTransform.sizeDelta)
+                    continue;
 
-                case ResolutionSource.WidthAndHeight:
-                    if (resolutionWidthAndHeight == Vector2.zero)
-                        throw new Exception("SafeArea resolution values not set.");
-                    return resolutionWidthAndHeight;
-
-                default:
-                    throw new Exception($"Not implemented for source: {source}");
+                _safeArea = Screen.safeArea;
+                _canvasScalerResolution = _canvasScalerRectTransform.sizeDelta;
+                
+                ApplySafeArea();
             }
         }
 
         #if UNITY_EDITOR
 
-        private Rect             _lastSafeArea;
-        private ResolutionSource _lastResolutionSource;
-        private Vector2          _lastResolution;
-
-        private bool  _lastTopApply;
-        private float _lastTopApplicableOffsetPercentage;
-        private float _lastTopApplicableOffsetPixels;
-        private float _lastTopUnapplicableOffsetPercentage;
-        private float _lastTopUnapplicableOffsetPixels;
-        
-        private bool  _lastBottomApply;
-        private float _lastBottomApplicableOffsetPercentage;
-        private float _lastBottomApplicableOffsetPixels;
-        private float _lastBottomUnapplicableOffsetPercentage;
-        private float _lastBottomUnapplicableOffsetPixels;
-        
-        private bool  _lastLeftApply;
-        private float _lastLeftApplicableOffsetPercentage;
-        private float _lastLeftApplicableOffsetPixels;
-        private float _lastLeftUnapplicableOffsetPercentage;
-        private float _lastLeftUnapplicableOffsetPixels;
-        
-        private bool  _lastRightApply;
-        private float _lastRightApplicableOffsetPercentage;
-        private float _lastRightApplicableOffsetPixels;
-        private float _lastRightUnapplicableOffsetPercentage;
-        private float _lastRightUnapplicableOffsetPixels;
+        private Vector2 _lastOffsetMin;
+        private Vector2 _lastOffsetMax;
 
         private void Update()
         {
-            UpdateReferenceResolution();
-
-            if (_lastSafeArea == Screen.safeArea &&
-                _lastResolutionSource == source &&
-                _lastResolution == _referenceResolution &&
-                
-                _lastTopApply == topApply &&
-                _lastTopApplicableOffsetPercentage == topApplicableOffsetPercentage &&
-                _lastTopApplicableOffsetPixels == topApplicableOffsetPixels &&
-                _lastTopUnapplicableOffsetPercentage == topUnapplicableOffsetPercentage &&
-                _lastTopUnapplicableOffsetPixels == topUnapplicableOffsetPixels &&
-                
-                _lastBottomApply == bottomApply &&
-                _lastBottomApplicableOffsetPercentage == bottomApplicableOffsetPercentage &&
-                _lastBottomApplicableOffsetPixels == bottomApplicableOffsetPixels &&
-                _lastBottomUnapplicableOffsetPercentage == bottomUnapplicableOffsetPercentage &&
-                _lastBottomUnapplicableOffsetPixels == bottomUnapplicableOffsetPixels &&
-                
-                _lastLeftApply == leftApply &&
-                _lastLeftApplicableOffsetPercentage == leftApplicableOffsetPercentage &&
-                _lastLeftApplicableOffsetPixels == leftApplicableOffsetPixels &&
-                _lastLeftUnapplicableOffsetPercentage == leftUnapplicableOffsetPercentage &&
-                _lastLeftUnapplicableOffsetPixels == leftUnapplicableOffsetPixels &&
-                
-                _lastRightApply == rightApply &&
-                _lastRightApplicableOffsetPercentage == rightApplicableOffsetPercentage &&
-                _lastRightApplicableOffsetPixels == rightApplicableOffsetPixels &&
-                _lastRightUnapplicableOffsetPercentage == rightUnapplicableOffsetPercentage &&
-                _lastRightUnapplicableOffsetPixels == rightUnapplicableOffsetPixels)
+            if (Application.isPlaying)
                 return;
 
+            var offsetMin = CalculateOffsetMin();
+            var offsetMax = CalculateOffsetMax();
+
+            if (_lastOffsetMin == offsetMin &&
+                _lastOffsetMax == offsetMax)
+                return;
+
+            _lastOffsetMin = offsetMin;
+            _lastOffsetMax = offsetMax;
+
             ApplySafeArea();
-
-            _lastSafeArea = Screen.safeArea;
-            _lastResolutionSource = source;
-            _lastResolution = _referenceResolution;
-
-            _lastTopApply = topApply;
-            _lastTopApplicableOffsetPercentage = topApplicableOffsetPercentage;
-            _lastTopApplicableOffsetPixels = topApplicableOffsetPixels;
-            _lastTopUnapplicableOffsetPercentage = topUnapplicableOffsetPercentage;
-            _lastTopUnapplicableOffsetPixels = topUnapplicableOffsetPixels;
-
-            _lastBottomApply = bottomApply;
-            _lastBottomApplicableOffsetPercentage = bottomApplicableOffsetPercentage;
-            _lastBottomApplicableOffsetPixels = bottomApplicableOffsetPixels;
-            _lastBottomUnapplicableOffsetPercentage = bottomUnapplicableOffsetPercentage;
-            _lastBottomUnapplicableOffsetPixels = bottomUnapplicableOffsetPixels;
-            
-            _lastLeftApply = leftApply;
-            _lastLeftApplicableOffsetPercentage = leftApplicableOffsetPercentage;
-            _lastLeftApplicableOffsetPixels = leftApplicableOffsetPixels;
-            _lastLeftUnapplicableOffsetPercentage = leftUnapplicableOffsetPercentage;
-            _lastLeftUnapplicableOffsetPixels = leftUnapplicableOffsetPixels;
-            
-            _lastRightApply = rightApply;
-            _lastRightApplicableOffsetPercentage = rightApplicableOffsetPercentage;
-            _lastRightApplicableOffsetPixels = rightApplicableOffsetPixels;
-            _lastRightUnapplicableOffsetPercentage = rightUnapplicableOffsetPercentage;
-            _lastRightUnapplicableOffsetPixels = rightUnapplicableOffsetPixels;
         }
 
         private void Reset()
         {
-            var rectTransform = GetComponent<RectTransform>();
+            rectTransform = GetComponent<RectTransform>();
             rectTransform.anchorMin = Vector2.zero;
             rectTransform.anchorMax = Vector2.one;
+        }
+
+        public void UpdateCanvasScaler()
+        {
+            _canvasScaler = GetComponentInParent<CanvasScaler>();
+            _canvasScalerResolution = _canvasScaler.GetComponent<RectTransform>().sizeDelta;
+        }
+
+        public bool CheckCanvasScalerFound()
+        {
+            return _canvasScaler != null;
+        }
+
+        public Vector2 GetReferenceResolution()
+        {
+            return _canvasScaler.referenceResolution;
         }
 
         #endif
 
         private void ApplySafeArea()
         {
-            var safeArea = Screen.safeArea;
+            var offsetMin = CalculateOffsetMin();
+            var offsetMax = CalculateOffsetMax();
 
-            var screenWidth = Screen.width;
-            var screenHeight = Screen.height;
+            rectTransform.offsetMin = new Vector2(offsetMin.x, offsetMin.y);
+            rectTransform.offsetMax = new Vector2(offsetMax.x, offsetMax.y);
+        }
 
-            var scaleHeight = _referenceResolution.y / screenHeight;
-            var scaleWidth = _referenceResolution.x / screenWidth;
-
-            var topPixel = screenHeight - (safeArea.y + safeArea.height);
-            var bottomPixels = safeArea.y;
-            var leftPixels = safeArea.xMin;
-            var rightPixels = -(screenWidth - safeArea.xMax);
-
-            var topUnits = 0F;
-            var bottomUnits = 0F;
-            var leftUnits = 0F;
-            var rightUnits = 0F;
-
-            if (topApply)
-            {
-                topUnits = topPixel * scaleHeight * 1.2f;
-                if (topPixel != 0)
-                    topUnits += topApplicableOffsetPixels + screenHeight * topApplicableOffsetPercentage;
-                else
-                    topUnits += topUnapplicableOffsetPixels + screenHeight * topUnapplicableOffsetPercentage;
-            }
+        private Vector2 CalculateOffsetMin()
+        {
+            var offset = new Vector2();
 
             if (bottomApply)
             {
-                bottomUnits = bottomPixels * scaleHeight * 1.2F;
+                var bottomPixels = Screen.safeArea.y;
+
+                offset.y = bottomPixels / Screen.height * _canvasScalerResolution.y;
+
                 if (bottomPixels != 0)
-                    bottomUnits += bottomApplicableOffsetPixels + screenHeight * bottomApplicableOffsetPercentage;
+                    offset.y += bottomApplicableOffsetPixels + Screen.height * bottomApplicableOffsetPercentage;
                 else
-                    bottomUnits += bottomUnapplicableOffsetPixels + screenHeight * bottomUnapplicableOffsetPercentage;
+                    offset.y += bottomUnapplicableOffsetPixels + Screen.height * bottomUnapplicableOffsetPercentage;
             }
 
             if (leftApply)
             {
-                leftUnits = leftPixels * scaleWidth;
+                var leftPixels = Screen.safeArea.xMin;
+
+                offset.x = leftPixels / Screen.width * _canvasScalerResolution.x;
+
                 if (leftPixels != 0)
-                    leftUnits += leftApplicableOffsetPixels + screenWidth * leftApplicableOffsetPercentage;
+                    offset.x += leftApplicableOffsetPixels + Screen.width * leftApplicableOffsetPercentage;
                 else
-                    leftUnits += leftUnapplicableOffsetPixels + screenWidth * leftUnapplicableOffsetPercentage;
+                    offset.x += leftUnapplicableOffsetPixels + Screen.width * leftUnapplicableOffsetPercentage;
             }
 
-            if (leftApply)
+            return offset;
+        }
+
+        private Vector2 CalculateOffsetMax()
+        {
+            var offset = new Vector2();
+
+            if (topApply)
             {
-                rightUnits = rightPixels * scaleWidth;
-                if (rightPixels != 0)
-                    rightUnits -= rightApplicableOffsetPixels + screenWidth * rightApplicableOffsetPercentage;
+                var topPixel = Math.Abs(Screen.safeArea.y + Screen.safeArea.height - Screen.height);
+
+                offset.y = -(topPixel / Screen.height * _canvasScalerResolution.y);
+
+                if (topPixel != 0)
+                    offset.y -= topApplicableOffsetPixels + Screen.height * topApplicableOffsetPercentage;
                 else
-                    rightUnits -= rightUnapplicableOffsetPixels + screenWidth * rightUnapplicableOffsetPercentage;
+                    offset.y -= topUnapplicableOffsetPixels + Screen.height * topUnapplicableOffsetPercentage;
             }
 
-            var rectTransform = GetComponent<RectTransform>();
-            rectTransform.offsetMin = new Vector2(leftUnits, bottomUnits);
-            rectTransform.offsetMax = new Vector2(rightUnits, -topUnits);
+            if (rightApply)
+            {
+                var rightPixels = -(Screen.width - Screen.safeArea.xMax);
+                offset.x = rightPixels / Screen.width * _canvasScalerResolution.x;
+
+                if (rightPixels != 0)
+                    offset.x -= rightApplicableOffsetPixels + Screen.width * rightApplicableOffsetPercentage;
+                else
+                    offset.x -= rightUnapplicableOffsetPixels + Screen.width * rightUnapplicableOffsetPercentage;
+            }
+
+            return offset;
         }
     }
 }

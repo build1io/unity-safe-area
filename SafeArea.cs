@@ -38,31 +38,16 @@ namespace Build1.UnitySafeArea
         [SerializeField]                  private float rightUnapplicableOffsetPercentage;
         [SerializeField]                  private float rightUnapplicableOffsetPixels;
 
+        private bool          _initialized;
         private CanvasScaler  _canvasScaler;
         private RectTransform _canvasScalerRectTransform;
         private Vector2       _canvasScalerResolution;
         private Rect          _safeArea;
-
-        private void Start()
-        {
-            // Canvas scaler will be the only option for now.
-            // Other sources generate too many cases impossible to handle.
-
-            if (rectTransform == null)
-                rectTransform = GetComponent<RectTransform>();
-
-            _safeArea = Screen.safeArea;
-            _canvasScaler = GetComponentInParent<CanvasScaler>();
-            _canvasScalerRectTransform = _canvasScaler.GetComponent<RectTransform>();
-            _canvasScalerResolution = _canvasScalerRectTransform.sizeDelta;
-        }
-
+        
         private void OnEnable()
         {
-            ApplySafeArea();
-
-            if (Application.isPlaying && monitorSafeAreaChange)
-                StartCoroutine(SafeAreaCheckCoroutine());
+            if (Application.isPlaying)
+                Initialize();
         }
 
         private void OnDisable()
@@ -70,27 +55,23 @@ namespace Build1.UnitySafeArea
             StopAllCoroutines();
         }
 
-        private IEnumerator SafeAreaCheckCoroutine()
-        {
-            while (true)
-            {
-                yield return new WaitForSeconds(0.1f);
-
-                if (_safeArea == Screen.safeArea && _canvasScalerResolution == _canvasScalerRectTransform.sizeDelta)
-                    continue;
-
-                _safeArea = Screen.safeArea;
-                _canvasScalerResolution = _canvasScalerRectTransform.sizeDelta;
-                
-                ApplySafeArea();
-            }
-        }
-
         #if UNITY_EDITOR
 
         private Vector2 _lastOffsetMin;
         private Vector2 _lastOffsetMax;
+        
+        private void Reset()
+        {
+            var rectTrans = GetComponent<RectTransform>();
+            rectTrans.anchorMin = Vector2.zero;
+            rectTrans.anchorMax = Vector2.one;
+        }
 
+        private void Start()
+        {
+            Initialize();
+        }
+        
         private void Update()
         {
             if (Application.isPlaying)
@@ -109,13 +90,10 @@ namespace Build1.UnitySafeArea
             ApplySafeArea();
         }
 
-        private void Reset()
-        {
-            rectTransform = GetComponent<RectTransform>();
-            rectTransform.anchorMin = Vector2.zero;
-            rectTransform.anchorMax = Vector2.one;
-        }
-
+        /*
+         * Public.
+         */
+        
         public void UpdateCanvasScaler()
         {
             _canvasScaler = GetComponentInParent<CanvasScaler>();
@@ -134,6 +112,47 @@ namespace Build1.UnitySafeArea
 
         #endif
 
+        /*
+         * Private.
+         */
+        
+        private void Initialize()
+        {
+            if (_initialized)
+                return;
+
+            if (rectTransform == null)
+                rectTransform = GetComponent<RectTransform>();
+
+            _safeArea = Screen.safeArea;
+            _canvasScaler = GetComponentInParent<CanvasScaler>();
+            _canvasScalerRectTransform = _canvasScaler.GetComponent<RectTransform>();
+            _canvasScalerResolution = _canvasScalerRectTransform.sizeDelta;
+            
+            ApplySafeArea();
+
+            if (Application.isPlaying && monitorSafeAreaChange)
+                StartCoroutine(SafeAreaCheckCoroutine());
+            
+            _initialized = true;
+        }
+
+        private IEnumerator SafeAreaCheckCoroutine()
+        {
+            while (true)
+            {
+                yield return new WaitForSeconds(0.05f);
+
+                if (_safeArea == Screen.safeArea && _canvasScalerResolution == _canvasScalerRectTransform.sizeDelta)
+                    continue;
+
+                _safeArea = Screen.safeArea;
+                _canvasScalerResolution = _canvasScalerRectTransform.sizeDelta;
+
+                ApplySafeArea();
+            }
+        }
+        
         private void ApplySafeArea()
         {
             var offsetMin = CalculateOffsetMin();

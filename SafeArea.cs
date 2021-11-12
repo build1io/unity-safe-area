@@ -43,7 +43,7 @@ namespace Build1.UnitySafeArea
         private Vector2       _canvasScalerResolution;
         private Rect          _safeArea;
 
-        private void Awake()
+        private void Start()
         {
             // Canvas scaler will be the only option for now.
             // Other sources generate too many cases impossible to handle.

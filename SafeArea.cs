@@ -79,9 +79,6 @@ namespace Build1.UnitySafeArea
 
         private void Update()
         {
-            if (Application.isPlaying)
-                return;
-            
             var offsetMin = CalculateOffsetMin();
             var offsetMax = CalculateOffsetMax();
             

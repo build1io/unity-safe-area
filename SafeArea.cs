@@ -44,10 +44,20 @@ namespace Build1.UnitySafeArea
         private Vector2       _canvasScalerResolution;
         private Rect          _safeArea;
         
+        #if UNITY_EDITOR
+        
+        private void Start()
+        {
+            Initialize();
+            OnEnableImpl();
+        }
+        
+        #endif
+        
         private void OnEnable()
         {
-            if (Application.isPlaying)
-                Initialize();
+            if (_initialized)
+                OnEnableImpl();
         }
 
         private void OnDisable()
@@ -67,21 +77,12 @@ namespace Build1.UnitySafeArea
             rectTrans.anchorMax = Vector2.one;
         }
 
-        private void Start()
-        {
-            Initialize();
-        }
-        
         private void Update()
         {
-            if (Application.isPlaying)
-                return;
-
             var offsetMin = CalculateOffsetMin();
             var offsetMax = CalculateOffsetMax();
 
-            if (_lastOffsetMin == offsetMin &&
-                _lastOffsetMax == offsetMax)
+            if (_lastOffsetMin == offsetMin && _lastOffsetMax == offsetMax)
                 return;
 
             _lastOffsetMin = offsetMin;
@@ -129,12 +130,15 @@ namespace Build1.UnitySafeArea
             _canvasScalerRectTransform = _canvasScaler.GetComponent<RectTransform>();
             _canvasScalerResolution = _canvasScalerRectTransform.sizeDelta;
             
+            _initialized = true;
+        }
+
+        private void OnEnableImpl()
+        {
             ApplySafeArea();
 
             if (Application.isPlaying && monitorSafeAreaChange)
                 StartCoroutine(SafeAreaCheckCoroutine());
-            
-            _initialized = true;
         }
 
         private IEnumerator SafeAreaCheckCoroutine()

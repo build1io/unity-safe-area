@@ -44,15 +44,11 @@ namespace Build1.UnitySafeArea
         private Vector2       _canvasScalerResolution;
         private Rect          _safeArea;
         
-        #if UNITY_EDITOR
-        
         private void Start()
         {
             Initialize();
             OnEnableImpl();
         }
-        
-        #endif
         
         private void OnEnable()
         {

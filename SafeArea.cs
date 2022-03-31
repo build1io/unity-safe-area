@@ -132,7 +132,9 @@ namespace Build1.UnitySafeArea
 
         private void OnEnableImpl()
         {
-            _tracker.Add(this, rectTransform, DrivenTransformProperties.All);
+            _tracker.Add(this, rectTransform, DrivenTransformProperties.SizeDelta | 
+                                              DrivenTransformProperties.Anchors | 
+                                              DrivenTransformProperties.AnchoredPosition);
             
             var offsetMin = CalculateOffsetMin();
             var offsetMax = CalculateOffsetMax();
@@ -161,7 +163,7 @@ namespace Build1.UnitySafeArea
         {
             rectTransform.offsetMin = new Vector2(offsetMin.x, offsetMin.y);
             rectTransform.offsetMax = new Vector2(offsetMax.x, offsetMax.y);
-            
+
             _lastOffsetMin = offsetMin;
             _lastOffsetMax = offsetMax;
         }

@@ -121,8 +121,11 @@ namespace Build1.UnitySafeArea
             if (_initialized)
                 return;
 
-            if (rectTransform == null)
+            if (!rectTransform)
                 rectTransform = GetComponent<RectTransform>();
+            
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = Vector2.one;
             
             _canvasScaler = GetComponentInParent<CanvasScaler>();
             _canvasScalerRectTransform = _canvasScaler.GetComponent<RectTransform>();
@@ -134,7 +137,8 @@ namespace Build1.UnitySafeArea
         {
             _tracker.Add(this, rectTransform, DrivenTransformProperties.SizeDelta | 
                                               DrivenTransformProperties.Anchors | 
-                                              DrivenTransformProperties.AnchoredPosition);
+                                              DrivenTransformProperties.AnchoredPosition3D | 
+                                              DrivenTransformProperties.Pivot);
             
             var offsetMin = CalculateOffsetMin();
             var offsetMax = CalculateOffsetMax();

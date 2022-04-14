@@ -71,6 +71,7 @@ namespace Build1.UnitySafeArea
             rectTransform = GetComponent<RectTransform>();
             rectTransform.anchorMin = Vector2.zero;
             rectTransform.anchorMax = Vector2.one;
+            rectTransform.pivot = new Vector2(0.5F, 0.5F);
         }
 
         private void Update()
@@ -126,6 +127,7 @@ namespace Build1.UnitySafeArea
             
             rectTransform.anchorMin = Vector2.zero;
             rectTransform.anchorMax = Vector2.one;
+            rectTransform.pivot = new Vector2(0.5F, 0.5F);
             
             _canvasScaler = GetComponentInParent<CanvasScaler>();
             _canvasScalerRectTransform = _canvasScaler.GetComponent<RectTransform>();
